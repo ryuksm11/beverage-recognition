@@ -1,0 +1,56 @@
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ─── Virtual Environments ─────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+# conda env is managed externally; only environment.yml is tracked
+
+# ─── Data (raw downloads are large and noisy — never commit) ──────────────────
+data/raw/
+data/processed/
+# product DB is small and generated — keep it tracked
+!data/product_db/
+
+# ─── Model Weights ────────────────────────────────────────────────────────────
+models/*.pth
+models/smoke_test.pth
+# keep eval outputs (PNGs, reports)
+!models/*.png
+!models/*.md
+
+# ─── Jupyter ──────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ─── Logs & Temp ──────────────────────────────────────────────────────────────
+*.log
+logs/
+tmp/
+.streamlit/
+
+# ─── Test Cache ───────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ─── Claude Code internal files ───────────────────────────────────────────────
+.claude/

@@ -1,0 +1,43 @@
+{
+  "class_name": "Mirinda",
+  "brand": "Mirinda",
+  "brand_origin": "United States",
+  "manufacturer": "PepsiCo Inc.",
+  "local_manufacturer": "PepsiCo India Holdings Pvt Ltd",
+  "product_type": "Carbonated Soft Drink",
+  "flavors": [
+    "Orange",
+    "Lime",
+    "Green Mango",
+    "Kala Khatta"
+  ],
+  "ingredients": [
+    "Carbonated Water",
+    "Sugar",
+    "Acidity Regulator (INS 330)",
+    "Artificial Orange Flavour",
+    "Stabilizer (INS 445)",
+    "Color (INS 110)"
+  ],
+  "packaging": [
+    {
+      "type": "PET bottle",
+      "volume_ml": 2000
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 500
+    },
+    {
+      "type": "can",
+      "volume_ml": 330
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 250
+    }
+  ],
+  "website": "https://www.pepsi.com/mirinda",
+  "image_url": null,
+  "last_scraped": "2026-03-25T22:00:11.405409+00:00"
+}

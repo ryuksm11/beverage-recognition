@@ -1,0 +1,44 @@
+{
+  "class_name": "7UP",
+  "brand": "7UP",
+  "brand_origin": "United States",
+  "manufacturer": "PepsiCo Inc.",
+  "local_manufacturer": "PepsiCo India Holdings Pvt Ltd",
+  "product_type": "Carbonated Soft Drink",
+  "flavors": [
+    "Original",
+    "Nimbooz (Lime)"
+  ],
+  "ingredients": [
+    "Carbonated Water",
+    "Sugar",
+    "Acidity Regulator (INS 330)",
+    "Natural Lemon and Lime Flavours",
+    "Preservative (INS 211)"
+  ],
+  "packaging": [
+    {
+      "type": "PET bottle",
+      "volume_ml": 2000
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 1500
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 500
+    },
+    {
+      "type": "can",
+      "volume_ml": 330
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 250
+    }
+  ],
+  "website": "https://www.7up.com",
+  "image_url": null,
+  "last_scraped": "2026-03-25T22:00:08.336828+00:00"
+}

@@ -1,0 +1,28 @@
+name: beverage-cnn
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - torch==2.2.2
+      - torchvision==0.17.2
+      - timm==0.9.16
+      - numpy==1.26.4
+      - pandas==2.2.2
+      - scikit-learn==1.4.2
+      - Pillow==10.3.0
+      - matplotlib==3.8.4
+      - seaborn==0.13.2
+      - requests==2.32.3
+      - beautifulsoup4==4.12.3
+      - lxml==5.2.1
+      - thefuzz==0.22.1
+      - python-Levenshtein==0.25.1
+      - streamlit==1.35.0
+      - PyYAML==6.0.2
+      - tqdm==4.66.4
+      - icrawler==0.6.6
+      - pytest==8.2.2

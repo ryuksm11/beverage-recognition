@@ -1,0 +1,37 @@
+{
+  "class_name": "Maaza",
+  "brand": "Maaza",
+  "brand_origin": "India",
+  "manufacturer": "The Coca-Cola Company",
+  "local_manufacturer": "Hindustan Coca-Cola Beverages Pvt Ltd",
+  "product_type": "Fruit Drink",
+  "flavors": [
+    "Mango",
+    "Apple"
+  ],
+  "ingredients": [
+    "Water",
+    "Mango Pulp",
+    "Sugar",
+    "Acidity Regulator (INS 330)",
+    "Natural Mango Flavouring Substance",
+    "Preservative (INS 211)"
+  ],
+  "packaging": [
+    {
+      "type": "PET bottle",
+      "volume_ml": 1200
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 600
+    },
+    {
+      "type": "tetra pack",
+      "volume_ml": 200
+    }
+  ],
+  "website": "https://www.maazaworld.com",
+  "image_url": null,
+  "last_scraped": "2026-03-25T21:59:59.355939+00:00"
+}

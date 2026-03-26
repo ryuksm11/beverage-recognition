@@ -1,0 +1,134 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# config.yaml — Single source of truth for the beverage-cnn project.
+# Every module reads from this file via utils/config_loader.py.
+# DO NOT hard-code any of these values elsewhere.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─── Beverage classes (order defines class indices 0..N-1) ───────────────────
+classes:
+  - "Coca-Cola"
+  - "Sprite"
+  - "Pepsi"
+  - "Maaza"
+  - "Fanta"
+  - "Red Bull"
+  - "Tropicana"
+  - "7UP"
+  - "Mirinda"
+
+# ─── Paths (all relative to project root) ────────────────────────────────────
+paths:
+  data_raw:        "data/raw"
+  data_processed:  "data/processed"
+  data_product_db: "data/product_db"
+  models:          "models"
+  logs:            "logs"
+
+# ─── Data download ───────────────────────────────────────────────────────────
+download:
+  images_per_class:       200     # target download count (expect ~20-30% noise)
+  request_delay_sec:      2.0     # polite delay between requests
+  image_extensions:
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".webp"
+
+# ─── Dataset split ───────────────────────────────────────────────────────────
+split:
+  train_ratio: 0.70
+  val_ratio:   0.15
+  test_ratio:  0.15
+  seed:        42
+
+# ─── Augmentation ────────────────────────────────────────────────────────────
+augmentation:
+  image_size:   224          # final crop size (EfficientNet-B0 default)
+  resize_to:    256          # resize before center/random crop
+  # ImageNet normalization — used for both train and eval
+  mean: [0.485, 0.456, 0.406]
+  std:  [0.229, 0.224, 0.225]
+  # Train-only augmentation parameters
+  train:
+    random_rotation_deg:    15
+    color_jitter_brightness: 0.3
+    color_jitter_contrast:   0.3
+    color_jitter_saturation: 0.3
+    color_jitter_hue:        0.1
+    horizontal_flip_prob:    0.5
+    # RandomAffine — simulate off-center framing (translate only, no extra rotation)
+    random_affine_translate_x:      0.1
+    random_affine_translate_y:      0.1
+    # RandomPerspective — simulate off-axis phone camera angle
+    random_perspective_distortion:  0.2
+    random_perspective_prob:        0.5
+    # RandomGrayscale — prevent over-reliance on brand color
+    random_grayscale_prob:          0.15
+    # GaussianBlur — simulate camera shake / defocus (keep sigma ≤ 1.5 for OCR safety)
+    gaussian_blur_kernel_size:      3
+    gaussian_blur_sigma_min:        0.1
+    gaussian_blur_sigma_max:        1.0
+    # RandomErasing — simulate occlusion: stickers, thumb, glare (keep scale ≤ 0.15 for OCR safety)
+    random_erasing_prob:            0.3
+    random_erasing_scale_min:       0.01
+    random_erasing_scale_max:       0.08
+    random_erasing_ratio_min:       0.3
+    random_erasing_ratio_max:       3.0
+
+# ─── Model ───────────────────────────────────────────────────────────────────
+model:
+  architecture: "efficientnet_b0"   # timm model name
+  pretrained:   true
+  # num_classes is derived from len(classes) at runtime — do not set here
+
+# ─── Training ────────────────────────────────────────────────────────────────
+training:
+  seed:            42
+  batch_size:      32
+  num_workers:     4          # DataLoader workers (set to 0 on Windows if issues)
+  pin_memory:      true
+
+  # Phase 1: train classifier head only (base frozen)
+  phase1:
+    num_epochs:    20
+    lr:            1.0e-3
+    weight_decay:  1.0e-4
+
+  # Phase 2: unfreeze last N blocks, fine-tune with lower LR
+  phase2:
+    num_epochs:    20
+    lr:            1.0e-4
+    weight_decay:  1.0e-4
+    unfreeze_last_n_blocks: 3
+
+  # Loss
+  label_smoothing: 0.05      # reduced from 0.1 — too aggressive for small dataset head training
+
+  # Early stopping (applied to val loss)
+  early_stopping:
+    patience:      7
+    min_delta:     0.001
+
+  # Checkpoint
+  checkpoint_filename: "best_checkpoint.pth"
+
+# ─── Evaluation gates (training considered passing only if met) ───────────────
+evaluation_gates:
+  min_val_accuracy_phase1: 0.45   # after phase 1 (head-only; base frozen — ceiling is ~0.50 on this dataset size)
+  min_val_accuracy_phase2: 0.80   # after phase 2
+  min_per_class_f1:        0.65   # for every class
+
+# ─── Inference ───────────────────────────────────────────────────────────────
+inference:
+  confidence_threshold: 0.60    # below this → "Low confidence" warning in UI
+  top_k:                3       # how many top predictions to return
+
+# ─── Retrieval ───────────────────────────────────────────────────────────────
+retrieval:
+  fuzzy_threshold: 80           # thefuzz score threshold (0-100)
+
+# ─── Scraper ─────────────────────────────────────────────────────────────────
+scraper:
+  request_delay_sec:  1.5
+  user_agent: "Mozilla/5.0 (compatible; beverage-cnn-research/1.0)"
+  openfoodfacts_api: "https://world.openfoodfacts.org/cgi/search.pl"

@@ -1,0 +1,54 @@
+{
+  "class_name": "Coca-Cola",
+  "brand": "Coca-Cola",
+  "brand_origin": "United States",
+  "manufacturer": "The Coca-Cola Company",
+  "local_manufacturer": "Hindustan Coca-Cola Beverages Pvt Ltd",
+  "product_type": "Carbonated Soft Drink",
+  "flavors": [
+    "Original",
+    "Zero Sugar",
+    "Diet"
+  ],
+  "ingredients": [
+    "Carbonated Water",
+    "Sugar",
+    "Caramel Color (INS 150d)",
+    "Acidity Regulator (INS 338)",
+    "Caffeine",
+    "Natural Flavours"
+  ],
+  "packaging": [
+    {
+      "type": "PET bottle",
+      "volume_ml": 2000
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 1500
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 750
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 500
+    },
+    {
+      "type": "can",
+      "volume_ml": 330
+    },
+    {
+      "type": "glass bottle",
+      "volume_ml": 300
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 250
+    }
+  ],
+  "website": "https://www.coca-cola.com",
+  "image_url": null,
+  "last_scraped": "2026-03-25T21:59:52.611106+00:00"
+}

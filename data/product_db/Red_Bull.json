@@ -1,0 +1,47 @@
+{
+  "class_name": "Red Bull",
+  "brand": "Red Bull",
+  "brand_origin": "Austria",
+  "manufacturer": "Red Bull GmbH",
+  "local_manufacturer": null,
+  "product_type": "Energy Drink",
+  "flavors": [
+    "Original",
+    "Sugar Free",
+    "Watermelon",
+    "Tropical",
+    "Blueberry"
+  ],
+  "ingredients": [
+    "Carbonated Water",
+    "Sucrose",
+    "Glucose",
+    "Citric Acid",
+    "Taurine",
+    "Sodium Bicarbonate",
+    "Magnesium Carbonate",
+    "Caffeine",
+    "Niacinamide",
+    "Calcium Pantothenate",
+    "Pyridoxine HCl",
+    "Vitamin B12",
+    "Natural and Artificial Flavours"
+  ],
+  "packaging": [
+    {
+      "type": "can",
+      "volume_ml": 473
+    },
+    {
+      "type": "can",
+      "volume_ml": 355
+    },
+    {
+      "type": "can",
+      "volume_ml": 250
+    }
+  ],
+  "website": "https://www.redbull.com",
+  "image_url": null,
+  "last_scraped": "2026-03-25T22:00:03.879695+00:00"
+}

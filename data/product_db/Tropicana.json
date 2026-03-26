@@ -1,0 +1,44 @@
+{
+  "class_name": "Tropicana",
+  "brand": "Tropicana",
+  "brand_origin": "United States",
+  "manufacturer": "PepsiCo Inc.",
+  "local_manufacturer": "PepsiCo India Holdings Pvt Ltd",
+  "product_type": "Fruit Juice",
+  "flavors": [
+    "Orange",
+    "Apple",
+    "Mixed Fruit",
+    "Guava",
+    "Mango",
+    "Litchi"
+  ],
+  "ingredients": [
+    "Reconstituted Fruit Juice",
+    "Sugar",
+    "Acidity Regulator (INS 330)",
+    "Ascorbic Acid (Vitamin C)",
+    "Natural Fruit Flavouring Substance"
+  ],
+  "packaging": [
+    {
+      "type": "tetra pack",
+      "volume_ml": 1000
+    },
+    {
+      "type": "tetra pack",
+      "volume_ml": 200
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 1000
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 500
+    }
+  ],
+  "website": "https://www.tropicana.com",
+  "image_url": null,
+  "last_scraped": "2026-03-25T22:00:06.111519+00:00"
+}

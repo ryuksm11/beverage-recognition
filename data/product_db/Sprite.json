@@ -1,0 +1,47 @@
+{
+  "class_name": "Sprite",
+  "brand": "Sprite",
+  "brand_origin": "United States",
+  "manufacturer": "The Coca-Cola Company",
+  "local_manufacturer": "Hindustan Coca-Cola Beverages Pvt Ltd",
+  "product_type": "Carbonated Soft Drink",
+  "flavors": [
+    "Original",
+    "Zero Sugar"
+  ],
+  "ingredients": [
+    "Carbonated Water",
+    "Sugar",
+    "Acidity Regulator (INS 330)",
+    "Natural Lemon and Lime Flavours"
+  ],
+  "packaging": [
+    {
+      "type": "PET bottle",
+      "volume_ml": 2000
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 1500
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 600
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 500
+    },
+    {
+      "type": "can",
+      "volume_ml": 330
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 250
+    }
+  ],
+  "website": "https://www.sprite.com",
+  "image_url": null,
+  "last_scraped": "2026-03-25T21:59:54.897540+00:00"
+}

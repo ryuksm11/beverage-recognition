@@ -1,0 +1,50 @@
+{
+  "class_name": "Pepsi",
+  "brand": "Pepsi",
+  "brand_origin": "United States",
+  "manufacturer": "PepsiCo Inc.",
+  "local_manufacturer": "PepsiCo India Holdings Pvt Ltd",
+  "product_type": "Carbonated Soft Drink",
+  "flavors": [
+    "Original",
+    "Black (Zero Sugar)",
+    "Diet"
+  ],
+  "ingredients": [
+    "Carbonated Water",
+    "Sugar",
+    "Caramel Color (INS 150d)",
+    "Acidity Regulators (INS 338, INS 330)",
+    "Caffeine",
+    "Natural Flavours"
+  ],
+  "packaging": [
+    {
+      "type": "PET bottle",
+      "volume_ml": 2000
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 1500
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 750
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 500
+    },
+    {
+      "type": "can",
+      "volume_ml": 330
+    },
+    {
+      "type": "PET bottle",
+      "volume_ml": 250
+    }
+  ],
+  "website": "https://www.pepsi.com",
+  "image_url": null,
+  "last_scraped": "2026-03-25T21:59:57.160564+00:00"
+}
