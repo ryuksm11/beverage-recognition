@@ -38,9 +38,12 @@ class ProductRetriever:
         db_dir = resolve_path(cfg["paths"]["data_product_db"])
         self._db: dict[str, ProductInfo] = {}
 
-        for json_path in sorted(db_dir.glob("*.json")):
-            record: ProductInfo = json.loads(json_path.read_text(encoding="utf-8"))
-            self._db[record["class_name"]] = record
+        if not db_dir.exists():
+            logger.warning(f"ProductRetriever: product DB directory not found: {db_dir}")
+        else:
+            for json_path in sorted(db_dir.glob("*.json")):
+                record: ProductInfo = json.loads(json_path.read_text(encoding="utf-8"))
+                self._db[record["class_name"]] = record
 
         logger.info(f"ProductRetriever: loaded {len(self._db)} records from {db_dir}")
 

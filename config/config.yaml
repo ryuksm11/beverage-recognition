@@ -21,6 +21,8 @@ paths:
   data_raw:        "data/raw"
   data_processed:  "data/processed"
   data_product_db: "data/product_db"
+  data_segmented:  "data/segmented"    # rembg output — see scripts/segment_training_images.py
+  data_backgrounds: "data/backgrounds" # indoor scenes — see scripts/download_backgrounds.py
   models:          "models"
   logs:            "logs"
 
@@ -48,7 +50,9 @@ augmentation:
   # ImageNet normalization — used for both train and eval
   mean: [0.485, 0.456, 0.406]
   std:  [0.229, 0.224, 0.225]
-  # Train-only augmentation parameters
+  # Probability of pasting segmented bottle onto random background (requires data/segmented + data/backgrounds)
+  background_paste_prob: 0.70
+  # Train-only augmentation parameters (Albumentations pipeline)
   train:
     random_rotation_deg:    15
     color_jitter_brightness: 0.3
@@ -56,24 +60,25 @@ augmentation:
     color_jitter_saturation: 0.3
     color_jitter_hue:        0.1
     horizontal_flip_prob:    0.5
-    # RandomAffine — simulate off-center framing (translate only, no extra rotation)
-    random_affine_translate_x:      0.1
-    random_affine_translate_y:      0.1
-    # RandomPerspective — simulate off-axis phone camera angle
+    # Perspective — simulate off-axis phone camera angle
     random_perspective_distortion:  0.2
     random_perspective_prob:        0.5
+    # Shift — simulate off-center framing
+    random_shift_limit:             0.1
+    # GaussianBlur — simulate camera defocus
+    gaussian_blur_prob:             0.30
     # RandomGrayscale — prevent over-reliance on brand color
     random_grayscale_prob:          0.15
-    # GaussianBlur — simulate camera shake / defocus (keep sigma ≤ 1.5 for OCR safety)
-    gaussian_blur_kernel_size:      3
-    gaussian_blur_sigma_min:        0.1
-    gaussian_blur_sigma_max:        1.0
-    # RandomErasing — simulate occlusion: stickers, thumb, glare (keep scale ≤ 0.15 for OCR safety)
-    random_erasing_prob:            0.3
-    random_erasing_scale_min:       0.01
-    random_erasing_scale_max:       0.08
-    random_erasing_ratio_min:       0.3
-    random_erasing_ratio_max:       3.0
+    # ── Real-world simulation (v2) ──────────────────────────────────
+    # RandomShadow — simulate uneven indoor/outdoor lighting
+    random_shadow_prob:             0.30
+    # MotionBlur — simulate camera shake
+    motion_blur_prob:               0.20
+    motion_blur_limit:              7     # max kernel size (must be odd)
+    # CoarseDropout — simulate partial occlusion (hand, sticker, glare)
+    coarse_dropout_prob:            0.30
+    coarse_dropout_holes:           4
+    coarse_dropout_size:            32    # max hole height/width in pixels
 
 # ─── Model ───────────────────────────────────────────────────────────────────
 model:
@@ -109,8 +114,9 @@ training:
     patience:      7
     min_delta:     0.001
 
-  # Checkpoint
-  checkpoint_filename: "best_checkpoint.pth"
+  # Checkpoints
+  checkpoint_filename:    "best_checkpoint_v2.pth"  # active model (background aug + albumentations, 87.23% test acc)
+  checkpoint_filename_v2: "best_checkpoint_v2.pth"  # retrained with background aug
 
 # ─── Evaluation gates (training considered passing only if met) ───────────────
 evaluation_gates:

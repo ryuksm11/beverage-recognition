@@ -132,6 +132,10 @@ if __name__ == "__main__":
         or str(resolve_path(cfg["paths"]["models"]) / cfg["training"]["checkpoint_filename"])
     )
 
+    if not Path(args.image).exists():
+        print(f"Error: image not found: {args.image}", file=sys.stderr)
+        sys.exit(1)
+
     predictor = Predictor(ckpt_path, cfg)
     img = Image.open(args.image)
     result = predictor.predict(img)

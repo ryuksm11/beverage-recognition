@@ -54,6 +54,7 @@ def _run_phase(
     cfg: dict,
     device: torch.device,
     models_dir: Path,
+    dataset_classes: list[str],
 ) -> tuple[list[float], list[float], list[float], list[float]]:
     """
     Run one training phase.
@@ -82,7 +83,7 @@ def _run_phase(
     train_accs: list[float] = []
     val_accs: list[float] = []
     best_val_loss = float("inf")
-    checkpoint_path = models_dir / cfg["training"]["checkpoint_filename"]
+    checkpoint_path = models_dir / cfg["training"]["checkpoint_filename_v2"]
 
     for epoch in range(1, num_epochs + 1):
         # ── Train ──────────────────────────────────────────────────────────
@@ -166,10 +167,10 @@ def run_training() -> None:
 
     # ── Phase 1: classifier head only ─────────────────────────────────────
     logger.info("=== Phase 1: Training classifier head (base frozen) ===")
-    tr_l1, vl_l1, tr_a1, vl_a1 = _run_phase("phase1", model, loaders, cfg, device, models_dir)
+    tr_l1, vl_l1, tr_a1, vl_a1 = _run_phase("phase1", model, loaders, cfg, device, models_dir, dataset_classes)
 
     # Restore best phase-1 weights before evaluating the gate
-    checkpoint_path = models_dir / cfg["training"]["checkpoint_filename"]
+    checkpoint_path = models_dir / cfg["training"]["checkpoint_filename_v2"]
     ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
     model.load_state_dict(ckpt["model_state_dict"])
 
@@ -185,7 +186,7 @@ def run_training() -> None:
     n = cfg["training"]["phase2"]["unfreeze_last_n_blocks"]
     unfreeze_last_n_blocks(model, n)
 
-    tr_l2, vl_l2, tr_a2, vl_a2 = _run_phase("phase2", model, loaders, cfg, device, models_dir)
+    tr_l2, vl_l2, tr_a2, vl_a2 = _run_phase("phase2", model, loaders, cfg, device, models_dir, dataset_classes)
 
     ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
     model.load_state_dict(ckpt["model_state_dict"])
