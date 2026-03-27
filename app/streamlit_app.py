@@ -168,9 +168,17 @@ _CSS = """
     margin-bottom: 0.6rem;
 }
 .front-view-note {
-    font-size: 0.78rem;
-    color: #6e7681;
-    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #8b949e;
+    background: rgba(139,148,158,0.07);
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.5rem 0.85rem;
+    margin-top: 1.1rem;
+    margin-bottom: 0;
+    text-align: center;
+    line-height: 1.5;
 }
 </style>
 """
@@ -250,7 +258,7 @@ def _render_product_card(product: dict, prediction: dict) -> None:
     html.append(f'<div style="font-size:0.84rem;color:#8b949e;line-height:1.6;">{", ".join(product["ingredients"])}</div>')
 
     # Static front-view note
-    html.append('<p class="front-view-note">📷 For best accuracy, photograph the front label.</p>')
+    html.append('<div class="front-view-note">📷 For best accuracy, photograph the front label.</div>')
 
     html.append('</div>')
     st.markdown("\n".join(html), unsafe_allow_html=True)
