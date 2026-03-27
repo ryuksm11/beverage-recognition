@@ -17,6 +17,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import math
+
 import timm
 import torch
 import torch.nn.functional as F
@@ -25,7 +27,12 @@ from PIL import Image
 from training.augmentation import get_eval_transforms
 from utils.config_loader import load_config, resolve_path
 from utils.logger import get_logger
-from utils.ocr_helper import extract_flavor_from_text, extract_text_from_image, extract_volume_from_text
+from utils.ocr_helper import (
+    extract_brand_from_text,
+    extract_flavor_from_text,
+    extract_text_from_image,
+    extract_volume_from_text,
+)
 
 logger = get_logger(__name__)
 
@@ -51,6 +58,9 @@ class Predictor:
         self._device = device or _get_device()
         self._transform = get_eval_transforms(cfg)
         self._top_k = cfg["inference"]["top_k"]
+        self._tta_n = cfg["inference"].get("tta_n", 5)
+        self._entropy_ratio = cfg["inference"].get("entropy_rejection_ratio", 0.75)
+        self._max_entropy = math.log(9)  # log(num_classes)
 
         ckpt = torch.load(checkpoint_path, map_location=self._device, weights_only=False)
         self._classes: list[str] = ckpt["classes"]
@@ -72,45 +82,75 @@ class Predictor:
 
     def predict(self, image: Image.Image) -> dict:
         """
-        Run classification + OCR flavor detection on a PIL image.
+        Run classification + OCR on a PIL image.
 
-        Returns dict matching the confirmed output schema:
+        Output schema:
             {
-                "class": str,
-                "confidence": float,
-                "flavor": str | None,
-                "top_k": [{"class": str, "confidence": float}, ...]
+                "class":        str,
+                "confidence":   float | None,   # None when OCR override fires
+                "flavor":       str | None,
+                "volume_ml":    int | None,
+                "ocr_override": bool,           # True → class came from OCR brand text, not classifier
+                "ood":          bool,           # True → entropy too high, likely not a beverage
+                "top_k":        [{"class": str, "confidence": float}, ...]
             }
         """
-        # Ensure RGB (handles RGBA, palette images, grayscale, etc.)
         if image.mode != "RGB":
             image = image.convert("RGB")
 
-        tensor = self._transform(image).unsqueeze(0).to(self._device)
-
+        # ── TTA: average softmax over N augmented passes ─────────────────────
+        tta_probs_list = []
         with torch.no_grad():
-            logits = self._model(tensor)
-            probs = F.softmax(logits, dim=1).squeeze(0)  # [num_classes]
+            for _ in range(self._tta_n):
+                tensor = self._transform(image).unsqueeze(0).to(self._device)
+                p = F.softmax(self._model(tensor), dim=1).squeeze(0)
+                tta_probs_list.append(p)
+        probs = torch.stack(tta_probs_list).mean(0)  # [num_classes]
+
+        # ── Entropy-based OOD check ──────────────────────────────────────────
+        entropy = -sum(
+            p.item() * math.log(p.item() + 1e-10) for p in probs
+        )
+        ood = (entropy / self._max_entropy) > self._entropy_ratio
 
         k = min(self._top_k, len(self._classes))
         top_probs, top_indices = torch.topk(probs, k)
-
         top_k = [
             {"class": self._classes[idx.item()], "confidence": round(prob.item(), 4)}
             for prob, idx in zip(top_probs, top_indices)
         ]
+        classifier_class = top_k[0]["class"]
+        classifier_conf = top_k[0]["confidence"]
 
-        # OCR — flavor and volume detection via EasyOCR two-pass pipeline
+        # ── OCR pipeline ─────────────────────────────────────────────────────
         ocr_text = extract_text_from_image(image)
         flavor = extract_flavor_from_text(ocr_text) if ocr_text else None
         volume_ml = extract_volume_from_text(ocr_text) if ocr_text else None
+        ocr_brand = extract_brand_from_text(ocr_text) if ocr_text else None
+
+        # ── OCR brand override ────────────────────────────────────────────────
+        # If OCR positively identifies a brand that contradicts the classifier,
+        # trust the label text (handles back-view images where the front logo
+        # is not visible but brand name appears in the ingredients / fine print).
+        if ocr_brand and ocr_brand != classifier_class:
+            return {
+                "class":        ocr_brand,
+                "confidence":   None,       # no softmax score for OCR-derived class
+                "flavor":       flavor,
+                "volume_ml":    volume_ml,
+                "ocr_override": True,
+                "ood":          False,
+                "top_k":        top_k,
+            }
 
         return {
-            "class": top_k[0]["class"],
-            "confidence": top_k[0]["confidence"],
-            "flavor": flavor,
-            "volume_ml": volume_ml,
-            "top_k": top_k,
+            "class":        classifier_class,
+            "confidence":   classifier_conf,
+            "flavor":       flavor,
+            "volume_ml":    volume_ml,
+            "ocr_override": False,
+            "ood":          ood,
+            "top_k":        top_k,
         }
 
 
