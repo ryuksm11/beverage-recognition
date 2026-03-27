@@ -9,7 +9,7 @@ packaging details from a structured knowledge base.
 ## What it does
 
 1. **Classifies** the beverage using EfficientNet-B0 (transfer learning, 9 classes)
-2. **Reads the label** with OCR (Tesseract) to detect bottle size and flavor variant
+2. **Reads the label** with OCR (EasyOCR primary, Tesseract fallback) to detect bottle size and flavor variant
 3. **Returns** the product name, confidence score, detected size/flavor, and top-3 alternatives
 4. **Looks up** brand details, ingredients, packaging, and manufacturer from a curated product database
 5. **Displays** everything in a Streamlit web app
@@ -39,7 +39,7 @@ User Image (upload)
                             ┌──────────────────────┐
                             │  UI renders:         │
                             │  • class + confidence│
-                            │  • detected size     │
+                            │  • detected size*    │
                             │  • product card      │
                             │  • top-k bar chart   │
                             └──────────────────────┘
@@ -99,6 +99,7 @@ All 9 classes met the ≥ 0.65 F1 gate.
 > **Note:** v2 was retrained with rembg background segmentation + random indoor backgrounds
 > to reduce domain shift between studio training images and real-world phone photos.
 > The app shows a warning and hides product details when confidence < 60%.
+> *Detected size is only shown when OCR successfully reads the volume from the label.
 
 ---
 
@@ -108,7 +109,8 @@ All 9 classes met the ≥ 0.65 F1 gate.
 |---|---|---|
 | Python | 3.11 | Via conda — do NOT use 3.13, PyTorch wheels are incomplete |
 | conda | any | Anaconda or Miniconda |
-| Tesseract | 5.x | Required for OCR — `brew install tesseract` (macOS) |
+| Tesseract | 5.x | Fallback OCR — `brew install tesseract` (macOS) |
+| EasyOCR | 1.7.2 | Primary OCR engine — `pip install easyocr` (downloads ~100 MB model on first run) |
 | Git | any | |
 
 ---
@@ -303,11 +305,12 @@ pytest tests/ -v
 │   ├── logger.py                # get_logger() — used everywhere
 │   ├── seed.py                  # set_global_seed() + get_device()
 │   ├── data_cleaner.py          # Corrupt-file removal + deduplication
-│   └── ocr_helper.py            # Tesseract OCR — volume + flavor extraction
+│   └── ocr_helper.py            # EasyOCR + Tesseract — two-pass volume + flavor extraction
 ├── tests/                       # pytest test suite (42 tests total)
 ├── scripts/
 │   ├── smoke_test_training.py   # 2-epoch sanity check
 │   ├── verify_ui.py             # Headless end-to-end pipeline check
+│   ├── debug_ocr.py             # OCR diagnostic — fragment dump + regex trace
 │   ├── segment_training_images.py  # rembg background removal (run in rembg-env)
 │   └── download_backgrounds.py     # Bing crawler — indoor background images
 ├── setup_project.py             # One-time directory scaffolding

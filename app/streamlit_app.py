@@ -202,13 +202,17 @@ def _render_product_card(product: dict, prediction: dict) -> None:
     html.append(f'<span class="info-key">Flavors</span><span class="info-val">{", ".join(product["flavors"])}</span>')
     html.append('</div>')
 
-    # Packaging sizes
-    html.append('<div class="section-label">Available sizes</div>')
-    html.append('<div class="size-list">')
-    for v in product["packaging"]:
-        active = "size-chip-active" if v["volume_ml"] == volume_ml else ""
-        html.append(f'<span class="size-chip {active}">{v["type"]} · {v["volume_ml"]} ml</span>')
-    html.append('</div>')
+    # OCR-detected volume (only shown when OCR successfully reads it)
+    if volume_ml is not None:
+        html.append('<div class="section-label">Detected size</div>')
+        html.append('<div class="size-list">')
+        for v in product["packaging"]:
+            if v["volume_ml"] == volume_ml:
+                html.append(f'<span class="size-chip size-chip-active">{v["type"]} · {volume_ml} ml</span>')
+                break
+        else:
+            html.append(f'<span class="size-chip size-chip-active">{volume_ml} ml</span>')
+        html.append('</div>')
 
     # Ingredients
     html.append('<div class="section-label" style="margin-top:0.75rem;">Ingredients</div>')
@@ -281,7 +285,7 @@ def main() -> None:
     img_col, result_col = st.columns([1, 1], gap="large")
 
     with img_col:
-        st.image(image, use_column_width=True)
+        st.image(image, use_container_width=True)
 
     with result_col:
         with st.spinner("Analysing…"):
