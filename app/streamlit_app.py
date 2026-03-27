@@ -148,6 +148,30 @@ _CSS = """
     color: #d29922;
     margin-bottom: 0.75rem;
 }
+.ood-box {
+    background: rgba(248,81,73,0.07);
+    border: 1px solid rgba(248,81,73,0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: #f85149;
+    margin-bottom: 0.75rem;
+}
+.ocr-override-pill {
+    display: inline-block;
+    background: rgba(163,113,247,0.10);
+    border: 1px solid rgba(163,113,247,0.30);
+    border-radius: 20px;
+    padding: 0.2rem 0.75rem;
+    font-size: 0.82rem;
+    color: #a371f7;
+    margin-bottom: 0.6rem;
+}
+.front-view-note {
+    font-size: 0.78rem;
+    color: #6e7681;
+    margin-top: 0.5rem;
+}
 </style>
 """
 
@@ -165,7 +189,9 @@ def load_pipeline():
 
 # ── Render helpers ────────────────────────────────────────────────────────────
 
-def _conf_css_class(conf: float, threshold: float) -> str:
+def _conf_css_class(conf: float | None, threshold: float) -> str:
+    if conf is None:
+        return "conf-orange"   # OCR override — no softmax score
     if conf >= 0.85:
         return "conf-green"
     if conf >= threshold:
@@ -174,10 +200,15 @@ def _conf_css_class(conf: float, threshold: float) -> str:
 
 
 def _render_product_card(product: dict, prediction: dict) -> None:
-    volume_ml: int | None = prediction["volume_ml"]
-    flavor: str | None    = prediction["flavor"]
+    volume_ml: int | None  = prediction["volume_ml"]
+    flavor: str | None     = prediction["flavor"]
+    ocr_override: bool     = prediction.get("ocr_override", False)
 
     html: list[str] = ['<div class="card">']
+
+    # OCR override badge — shown when class came from label text, not vision
+    if ocr_override:
+        html.append('<span class="ocr-override-pill">⬡ Identified from label text</span><br>')
 
     # Type · origin
     html.append(
@@ -217,6 +248,9 @@ def _render_product_card(product: dict, prediction: dict) -> None:
     # Ingredients
     html.append('<div class="section-label" style="margin-top:0.75rem;">Ingredients</div>')
     html.append(f'<div style="font-size:0.84rem;color:#8b949e;line-height:1.6;">{", ".join(product["ingredients"])}</div>')
+
+    # Static front-view note
+    html.append('<p class="front-view-note">📷 For best accuracy, photograph the front label.</p>')
 
     html.append('</div>')
     st.markdown("\n".join(html), unsafe_allow_html=True)
@@ -291,18 +325,33 @@ def main() -> None:
         with st.spinner("Analysing…"):
             prediction = predictor.predict(image)
 
-        conf    = prediction["confidence"]
+        conf    = prediction["confidence"]    # float | None
+        ood     = prediction.get("ood", False)
         css_cls = _conf_css_class(conf, threshold)
+        conf_label = f"{conf * 100:.1f}%" if conf is not None else "via OCR"
 
         st.markdown(
             f'<div class="product-row">'
             f'<span class="product-name">{prediction["class"]}</span>'
-            f'<span class="conf-badge {css_cls}">{conf * 100:.1f}%</span>'
+            f'<span class="conf-badge {css_cls}">{conf_label}</span>'
             f'</div>',
             unsafe_allow_html=True,
         )
 
-        if conf < threshold:
+        # OOD rejection — entropy too high
+        if ood:
+            st.markdown(
+                '<div class="ood-box">'
+                '✕ This doesn\'t look like a recognised beverage. '
+                'Try a photo of the front label of a packaged drink.'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+            _render_top_k(prediction["top_k"])
+            return
+
+        # Low classifier confidence (skip when OCR override — conf is None)
+        if conf is not None and conf < threshold:
             st.markdown(
                 f'<div class="warn-box">'
                 f'⚠ Confidence too low ({conf * 100:.1f}% &lt; {threshold * 100:.0f}%). '

@@ -156,6 +156,38 @@ def extract_volume_from_text(ocr_text: str) -> int | None:
     return None
 
 
+_BRAND_NAMES: dict[str, list[str]] = {
+    "Coca-Cola":  ["coca-cola", "coca cola", "cocacola", "coke"],
+    "Pepsi":      ["pepsi"],
+    "Sprite":     ["sprite"],
+    "Fanta":      ["fanta"],
+    "Red Bull":   ["red bull", "redbull"],
+    "Maaza":      ["maaza"],
+    "Tropicana":  ["tropicana"],
+    "7UP":        ["7up", "7 up"],
+    "Mirinda":    ["mirinda"],
+}
+
+
+def extract_brand_from_text(ocr_text: str) -> str | None:
+    """
+    Scan OCR text for explicit brand name mentions.
+    Returns the matched class name (e.g. 'Coca-Cola'), or None if not found.
+    Used to override the classifier when the front logo is not visible but
+    the brand name appears in the back-label text.
+    """
+    if not ocr_text:
+        return None
+    text_lower = ocr_text.lower()
+    # Strip known brand fragments that appear in other brands' text
+    # (e.g. 'coca-cola' on a Sprite bottle's back label is still Coca-Cola)
+    for brand, aliases in _BRAND_NAMES.items():
+        for alias in aliases:
+            if re.search(r"\b" + re.escape(alias) + r"\b", text_lower):
+                return brand
+    return None
+
+
 def extract_flavor_from_text(ocr_text: str, extra_flavors: list[str] | None = None) -> str | None:
     if not ocr_text:
         return None

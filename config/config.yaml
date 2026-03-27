@@ -126,8 +126,10 @@ evaluation_gates:
 
 # ─── Inference ───────────────────────────────────────────────────────────────
 inference:
-  confidence_threshold: 0.60    # below this → "Low confidence" warning in UI
-  top_k:                3       # how many top predictions to return
+  confidence_threshold:    0.60   # below this → "Low confidence" warning in UI
+  top_k:                   3      # how many top predictions to return
+  tta_n:                   5      # number of TTA augmented passes to average
+  entropy_rejection_ratio: 0.75   # entropy/max_entropy above this → OOD rejection
 
 # ─── Retrieval ───────────────────────────────────────────────────────────────
 retrieval:
