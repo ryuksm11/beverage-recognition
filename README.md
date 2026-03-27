@@ -9,7 +9,7 @@ packaging details from a structured knowledge base.
 ## What it does
 
 1. **Classifies** the beverage using EfficientNet-B0 (transfer learning, 9 classes)
-2. **Reads the label** with OCR (EasyOCR — two-pass pipeline) to detect bottle size and flavor variant
+2. **Reads the label** with OCR (EasyOCR — four-pass pipeline) to detect bottle size and flavor variant
 3. **Returns** the product name, confidence score, detected size/flavor, and top-3 alternatives
 4. **Looks up** brand details, ingredients, packaging, and manufacturer from a curated product database
 5. **Displays** everything in a Streamlit web app
@@ -215,7 +215,7 @@ If `data/segmented/` and `data/backgrounds/` exist, training automatically appli
 
 Saves `models/best_checkpoint_v2.pth`, `models/confusion_matrix.png`, `models/training_curves.png`.
 
-### Step 6 — Scrape the product knowledge base
+### Step 8 — Scrape the product knowledge base
 
 ```bash
 python scraper/scrape_products.py
@@ -259,7 +259,7 @@ pytest tests/ -v
 |---|---|---|
 | `tests/test_dataset.py` | 10 | DataLoader shapes, split ratios, class balance |
 | `tests/test_model.py` | 5 | Model output shape, frozen layers, checkpoint save/load |
-| `tests/test_predict.py` | 13 | Prediction schema, confidence range, OCR volume detection |
+| `tests/test_predict.py` | 20 | Prediction schema, confidence range, OCR volume detection, volume regex patterns |
 | `tests/test_retriever.py` | 14 | Exact lookup, fuzzy lookup (typo/case), missing-key fallback, container type |
 
 ---
@@ -275,7 +275,8 @@ pytest tests/ -v
 │   ├── processed/               # Train/val/test splits (gitignored — large)
 │   └── product_db/              # 9 × curated JSON files (tracked)
 ├── models/
-│   ├── best_checkpoint.pth      # Trained weights (gitignored — 16 MB binary)
+│   ├── best_checkpoint_v2.pth   # Active checkpoint — 87.23% test acc (gitignored)
+│   ├── best_checkpoint.pth      # v1 fallback — 82.98% test acc (gitignored)
 │   ├── confusion_matrix.png     # Tracked
 │   └── training_curves.png      # Tracked
 ├── scraper/
@@ -298,8 +299,8 @@ pytest tests/ -v
 │   ├── logger.py                # get_logger() — used everywhere
 │   ├── seed.py                  # set_global_seed() + get_device()
 │   ├── data_cleaner.py          # Corrupt-file removal + deduplication
-│   └── ocr_helper.py            # EasyOCR — two-pass volume + flavor extraction
-├── tests/                       # pytest test suite (42 tests total)
+│   └── ocr_helper.py            # EasyOCR — four-pass volume + flavor extraction
+├── tests/                       # pytest test suite (49 tests total)
 ├── scripts/
 │   ├── smoke_test_training.py   # 2-epoch sanity check
 │   ├── verify_ui.py             # Headless end-to-end pipeline check

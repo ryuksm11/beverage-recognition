@@ -149,3 +149,17 @@ def test_volume_detected_from_ocr(predictor):
     with patch("inference.predict.extract_text_from_image", return_value="Sprite 500ml Chilled"):
         result = predictor.predict(_dummy_image())
     assert result["volume_ml"] == 500
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("NET QUANTITY: 750 ml", 750),    # real phone photo (Coca-Cola 750ml glass bottle)
+    ("net content 2 L", 2000),        # product catalog 2L PET bottle
+    ("500ml", 500),
+    ("1.5 L", 1500),
+    ("e 330 ml", 330),                # Indian label prefix 'e'
+    ("Contains 750ml chilled", 750),  # volume in middle of string
+    ("NET QTY 2l", 2000),             # stylized lowercase l
+])
+def test_volume_regex_patterns(text, expected):
+    """Volume regex must handle all observed Indian label formats."""
+    assert extract_volume_from_text(text) == expected

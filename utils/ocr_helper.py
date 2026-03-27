@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image
 
 try:
     import easyocr
@@ -26,8 +26,10 @@ _BRAND_FRAGMENTS = ["coca-cola", "coca cola", "cocacola", "pepsi-cola"]
 # Volume label prefixes common on Indian packaged beverages
 _VOLUME_PREFIXES = r"(?:net\s+(?:content|quantity|qty|wt\.?)|net\.?\s*e|e\s+)?\s*"
 
-# Minimum EasyOCR confidence to include a text fragment
-_EASYOCR_MIN_CONF = 0.2
+# Pass 1 (full image): keep noise low
+_CONF_PASS1 = 0.2
+# Passes 2 + 3 (volume-targeted crops): lower threshold to catch small/stylized text
+_CONF_CROP = 0.1
 
 
 def _get_easyocr_reader() -> "easyocr.Reader":
@@ -38,39 +40,62 @@ def _get_easyocr_reader() -> "easyocr.Reader":
     return _easyocr_reader
 
 
-def _preprocess(image: Image.Image, min_side: int = 1600) -> Image.Image:
-    """Upscale small images, boost contrast and sharpen for better OCR."""
+def _upscale(image: Image.Image, min_side: int) -> Image.Image:
+    """Upscale image so the shorter side is at least min_side pixels."""
     w, h = image.size
     if min(w, h) < min_side:
         scale = min_side / min(w, h)
         image = image.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
-    gray = ImageOps.grayscale(image)
-    gray = ImageOps.autocontrast(gray)
-    gray = ImageEnhance.Contrast(gray).enhance(1.5)
-    gray = gray.filter(ImageFilter.SHARPEN)
-    return gray
+    return image
 
 
 def extract_text_from_image(image: Image.Image) -> str:
     """
     Extract raw text from a beverage label image using EasyOCR.
-    Runs two passes: full image + bottom-third crop for small volume text.
-    Returns empty string if EasyOCR finds nothing.
+
+    Four passes (all on color — no grayscale conversion):
+      Pass 1: full image upscaled to ≥1600px — brand, flavor, general text
+      Pass 2: middle band (30–70% height) at ≥2400px — label body on real photos
+              where the bottle fills the frame and the label is vertically centred
+      Pass 3: bottom 30% (70–100% height) at ≥2400px — volume text for product
+              catalog shots where the label sits in the lower half of the image
+      Pass 4: bottom 15% (85–100% height) at ≥3200px — very small NET QTY line
+
+    Passes 2-4 use a lower confidence threshold (0.1 vs 0.2) to capture
+    small, stylized text that Pass 1 misses at standard confidence.
     """
     reader = _get_easyocr_reader()
+    image = image.convert("RGB")
+    fragments: list[str] = []
 
-    # Pass 1: full image upscaled to ≥1600px — captures brand, flavor, general text
-    arr_full = np.array(_preprocess(image, min_side=1600).convert("RGB"))
-    results_full = reader.readtext(arr_full)
-    fragments = [t for (_, t, c) in results_full if c >= _EASYOCR_MIN_CONF]
+    # Pass 1 — full image
+    arr = np.array(_upscale(image, min_side=1600))
+    for (_, t, c) in reader.readtext(arr):
+        if c >= _CONF_PASS1:
+            fragments.append(t)
 
-    # Pass 2: bottom-third crop upscaled to ≥2400px — targets small volume text
-    # (e.g. "2l", "500ml") typically printed near the base of the label
     w, h = image.size
-    bottom_crop = image.crop((0, int(h * 0.60), w, h))
-    arr_crop = np.array(_preprocess(bottom_crop, min_side=2400).convert("RGB"))
-    results_crop = reader.readtext(arr_crop)
-    fragments += [t for (_, t, c) in results_crop if c >= _EASYOCR_MIN_CONF]
+
+    # Pass 2 — middle band (real phone photos: label occupies centre of frame)
+    crop2 = image.crop((0, int(h * 0.30), w, int(h * 0.70)))
+    arr2 = np.array(_upscale(crop2, min_side=2400))
+    for (_, t, c) in reader.readtext(arr2):
+        if c >= _CONF_CROP:
+            fragments.append(t)
+
+    # Pass 3 — bottom 30% (product catalog shots: label in lower half)
+    crop3 = image.crop((0, int(h * 0.70), w, h))
+    arr3 = np.array(_upscale(crop3, min_side=2400))
+    for (_, t, c) in reader.readtext(arr3):
+        if c >= _CONF_CROP:
+            fragments.append(t)
+
+    # Pass 4 — bottom 15%, highest resolution
+    crop4 = image.crop((0, int(h * 0.85), w, h))
+    arr4 = np.array(_upscale(crop4, min_side=3200))
+    for (_, t, c) in reader.readtext(arr4):
+        if c >= _CONF_CROP:
+            fragments.append(t)
 
     return " ".join(fragments)
 
@@ -114,6 +139,19 @@ def extract_volume_from_text(ocr_text: str) -> int | None:
         val = float(misread_match.group(1))
         if 0.2 <= val <= 3.0:
             return int(val * 1000)
+
+    # Cross-fragment fallback: EasyOCR sometimes returns '750' and 'ml' as separate
+    # non-adjacent bounding boxes (different visual baselines on the label).
+    # Collect all standalone numeric tokens; if exactly one is a plausible ml volume
+    # (100–3000) and 'ml' appears anywhere as a word token, pair them.
+    standalone_nums = [
+        float(tok) for tok in ocr_text.split()
+        if re.fullmatch(r"\d+(?:\.\d+)?", tok)
+    ]
+    has_ml_token = bool(re.search(r"\bml\b", ocr_text, re.IGNORECASE))
+    plausible_ml = [n for n in standalone_nums if 100 <= n <= 3000]
+    if has_ml_token and len(set(plausible_ml)) == 1:
+        return int(plausible_ml[0])
 
     return None
 
