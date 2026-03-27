@@ -27,7 +27,7 @@ def get_train_transforms(cfg: dict) -> _PILToAlbumentations:
 
     transform = A.Compose([
         # ── Geometry ───────────────────────────────────────────────────────────
-        A.RandomResizedCrop(height=size, width=size, scale=(0.6, 1.0)),
+        A.RandomResizedCrop(size=(size, size), scale=(0.6, 1.0)),
         A.HorizontalFlip(p=t["horizontal_flip_prob"]),
         A.Rotate(limit=t["random_rotation_deg"], p=0.5),
         A.Perspective(scale=(0.05, t["random_perspective_distortion"]),
@@ -60,13 +60,10 @@ def get_train_transforms(cfg: dict) -> _PILToAlbumentations:
         A.MotionBlur(blur_limit=t["motion_blur_limit"], p=t["motion_blur_prob"]),
         # Partial occlusion — thumb, sticker, price tag, glare patch
         A.CoarseDropout(
-            max_holes=t["coarse_dropout_holes"],
-            max_height=t["coarse_dropout_size"],
-            max_width=t["coarse_dropout_size"],
-            min_holes=1,
-            min_height=8,
-            min_width=8,
-            fill_value=0,
+            num_holes_range=(1, t["coarse_dropout_holes"]),
+            hole_height_range=(8, t["coarse_dropout_size"]),
+            hole_width_range=(8, t["coarse_dropout_size"]),
+            fill=0,
             p=t["coarse_dropout_prob"],
         ),
 

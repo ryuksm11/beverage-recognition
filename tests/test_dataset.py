@@ -118,14 +118,11 @@ def test_train_transforms_tensor_bounds_with_erasing(cfg):
 
 def test_augmentation_config_keys_present(cfg):
     t = cfg["augmentation"]["train"]
-    assert 0.0 < t["random_affine_translate_x"] <= 0.15
-    assert 0.0 < t["random_affine_translate_y"] <= 0.15
+    assert 0.0 < t["random_shift_limit"] <= 0.15
     assert 0.0 < t["random_perspective_distortion"] <= 0.25
     assert 0.0 < t["random_perspective_prob"] <= 1.0
     assert 0.0 < t["random_grayscale_prob"] <= 0.3
-    assert t["gaussian_blur_kernel_size"] % 2 == 1, "kernel_size must be odd"
-    assert t["gaussian_blur_sigma_min"] < t["gaussian_blur_sigma_max"]
-    assert t["gaussian_blur_sigma_max"] <= 1.5, "sigma above 1.5 risks OCR text degradation"
-    assert 0.0 < t["random_erasing_prob"] <= 1.0
-    assert t["random_erasing_scale_max"] <= 0.15, "erase area above 15% risks covering brand name"
-    assert t["random_erasing_ratio_min"] < t["random_erasing_ratio_max"]
+    assert 0.0 < t["gaussian_blur_prob"] <= 1.0
+    assert 0.0 < t["random_shadow_prob"] <= 1.0
+    assert 0.0 < t["motion_blur_prob"] <= 1.0
+    assert 0.0 < t["coarse_dropout_prob"] <= 1.0

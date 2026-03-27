@@ -9,7 +9,7 @@ packaging details from a structured knowledge base.
 ## What it does
 
 1. **Classifies** the beverage using EfficientNet-B0 (transfer learning, 9 classes)
-2. **Reads the label** with OCR (EasyOCR primary, Tesseract fallback) to detect bottle size and flavor variant
+2. **Reads the label** with OCR (EasyOCR — two-pass pipeline) to detect bottle size and flavor variant
 3. **Returns** the product name, confidence score, detected size/flavor, and top-3 alternatives
 4. **Looks up** brand details, ingredients, packaging, and manufacturer from a curated product database
 5. **Displays** everything in a Streamlit web app
@@ -109,8 +109,7 @@ All 9 classes met the ≥ 0.65 F1 gate.
 |---|---|---|
 | Python | 3.11 | Via conda — do NOT use 3.13, PyTorch wheels are incomplete |
 | conda | any | Anaconda or Miniconda |
-| Tesseract | 5.x | Fallback OCR — `brew install tesseract` (macOS) |
-| EasyOCR | 1.7.2 | Primary OCR engine — `pip install easyocr` (downloads ~100 MB model on first run) |
+| EasyOCR | 1.7.2 | OCR engine — `pip install easyocr` (downloads ~100 MB model on first run) |
 | Git | any | |
 
 ---
@@ -137,13 +136,7 @@ conda activate beverage-cnn
 pip install -r requirements.txt
 ```
 
-### 4. Install Tesseract (macOS)
-
-```bash
-brew install tesseract
-```
-
-### 5. Create required directories
+### 4. Create required directories
 
 ```bash
 python setup_project.py
@@ -305,7 +298,7 @@ pytest tests/ -v
 │   ├── logger.py                # get_logger() — used everywhere
 │   ├── seed.py                  # set_global_seed() + get_device()
 │   ├── data_cleaner.py          # Corrupt-file removal + deduplication
-│   └── ocr_helper.py            # EasyOCR + Tesseract — two-pass volume + flavor extraction
+│   └── ocr_helper.py            # EasyOCR — two-pass volume + flavor extraction
 ├── tests/                       # pytest test suite (42 tests total)
 ├── scripts/
 │   ├── smoke_test_training.py   # 2-epoch sanity check

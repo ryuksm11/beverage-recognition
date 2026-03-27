@@ -18,9 +18,7 @@ import numpy as np
 from PIL import Image
 
 from utils.ocr_helper import (
-    _EASYOCR_AVAILABLE,
     _EASYOCR_MIN_CONF,
-    _TESSERACT_AVAILABLE,
     _VOLUME_PREFIXES,
     _get_easyocr_reader,
     _preprocess,
@@ -32,68 +30,66 @@ def run(image_path: str) -> None:
     img = Image.open(image_path).convert("RGB")
     print(f"\nImage size: {img.size}")
 
-    # ── EasyOCR raw dump ────────────────────────────────────────────────────
-    if not _EASYOCR_AVAILABLE:
-        print("EasyOCR not installed — falling back to Tesseract")
+    reader = _get_easyocr_reader()
+
+    # Pass 1: full image
+    arr_full = np.array(_preprocess(img, min_side=1600).convert("RGB"))
+    results_full = reader.readtext(arr_full)
+    print(f"\n--- Pass 1: full image (upscaled to ≥1600px) ---")
+    for _, text, conf in results_full:
+        flag = "  KEPT" if conf >= _EASYOCR_MIN_CONF else "DROPPED"
+        print(f"  [{flag}] conf={conf:.2f}  text={repr(text)}")
+
+    # Pass 2: bottom-third crop
+    w, h = img.size
+    bottom_crop = img.crop((0, int(h * 0.60), w, h))
+    arr_crop = np.array(_preprocess(bottom_crop, min_side=2400).convert("RGB"))
+    results_crop = reader.readtext(arr_crop)
+    print(f"\n--- Pass 2: bottom-third crop (upscaled to ≥2400px) ---")
+    for _, text, conf in results_crop:
+        flag = "  KEPT" if conf >= _EASYOCR_MIN_CONF else "DROPPED"
+        print(f"  [{flag}] conf={conf:.2f}  text={repr(text)}")
+
+    fragments = (
+        [t for (_, t, c) in results_full if c >= _EASYOCR_MIN_CONF]
+        + [t for (_, t, c) in results_crop if c >= _EASYOCR_MIN_CONF]
+    )
+    ocr_text = " ".join(fragments)
+    print(f"\nJoined OCR text: {repr(ocr_text)}")
+
+    # Regex trace
+    print("\n--- Regex trace ---")
+    ml_match = re.search(
+        _VOLUME_PREFIXES + r"(\d+(?:\.\d+)?)\s*(?:ml|mL|ML)\b",
+        ocr_text, re.IGNORECASE,
+    )
+    if ml_match:
+        print(f"  ml regex matched: {repr(ml_match.group())} → {int(float(ml_match.group(1)))} ml")
     else:
-        print(f"\n--- EasyOCR (min_conf={_EASYOCR_MIN_CONF}) ---")
-        reader = _get_easyocr_reader()
+        print("  ml regex: NO MATCH")
 
-        # Raw (no preprocessing)
-        arr_raw = np.array(img)
-        results_raw = reader.readtext(arr_raw)
-        print(f"\nRaw image ({img.size}):")
-        for bbox, text, conf in results_raw:
-            flag = "  KEPT" if conf >= _EASYOCR_MIN_CONF else "DROPPED"
-            print(f"  [{flag}] conf={conf:.2f}  text={repr(text)}")
+    l_match = re.search(
+        _VOLUME_PREFIXES + r"(\d+(?:\.\d+)?)\s*(?:litre|liter|ltr|l)\b",
+        ocr_text, re.IGNORECASE,
+    )
+    if l_match:
+        print(f"  litre regex matched: {repr(l_match.group())} → {int(float(l_match.group(1)) * 1000)} ml")
+    else:
+        print("  litre regex: NO MATCH")
 
-        # With preprocessing
-        preprocessed = _preprocess(img)
-        arr_pre = np.array(preprocessed.convert("RGB"))
-        results_pre = reader.readtext(arr_pre)
-        print(f"\nPreprocessed image ({preprocessed.size}):")
-        for bbox, text, conf in results_pre:
-            flag = "  KEPT" if conf >= _EASYOCR_MIN_CONF else "DROPPED"
-            print(f"  [{flag}] conf={conf:.2f}  text={repr(text)}")
+    misread_match = re.search(
+        _VOLUME_PREFIXES + r"(\d+(?:\.\d+)?)\s*[012Ii]\b",
+        ocr_text, re.IGNORECASE,
+    )
+    if misread_match:
+        val = float(misread_match.group(1))
+        in_range = 0.2 <= val <= 3.0
+        print(f"  misread fallback matched: {repr(misread_match.group())} → val={val}, in_range={in_range}")
+    else:
+        print("  misread fallback: NO MATCH")
 
-        kept_fragments = [t for (_, t, c) in results_pre if c >= _EASYOCR_MIN_CONF]
-        ocr_text = " ".join(kept_fragments)
-        print(f"\nJoined OCR text: {repr(ocr_text)}")
-
-    # ── Regex trace ─────────────────────────────────────────────────────────
-    if _EASYOCR_AVAILABLE:
-        print("\n--- Regex trace ---")
-        ml_match = re.search(
-            _VOLUME_PREFIXES + r"(\d+(?:\.\d+)?)\s*(?:ml|mL|ML)\b",
-            ocr_text, re.IGNORECASE,
-        )
-        if ml_match:
-            print(f"  ml regex matched: {repr(ml_match.group())} → {int(float(ml_match.group(1)))} ml")
-        else:
-            print("  ml regex: NO MATCH")
-
-        l_match = re.search(
-            _VOLUME_PREFIXES + r"(\d+(?:\.\d+)?)\s*(?:litre|liter|ltr|l)\b",
-            ocr_text, re.IGNORECASE,
-        )
-        if l_match:
-            print(f"  litre regex matched: {repr(l_match.group())} → {int(float(l_match.group(1)) * 1000)} ml")
-        else:
-            print("  litre regex: NO MATCH")
-
-        misread_match = re.search(
-            _VOLUME_PREFIXES + r"(\d+(?:\.\d+)?)\s*[012Ii]\b",
-            ocr_text, re.IGNORECASE,
-        )
-        if misread_match:
-            val = float(misread_match.group(1))
-            in_range = 0.2 <= val <= 3.0
-            print(f"  misread fallback matched: {repr(misread_match.group())} → val={val}, in_range={in_range}")
-        else:
-            print("  misread fallback: NO MATCH")
-
-        final = extract_volume_from_text(ocr_text)
-        print(f"\n==> extract_volume_from_text result: {final} ml")
+    final = extract_volume_from_text(ocr_text)
+    print(f"\n==> extract_volume_from_text result: {final} ml")
 
 
 if __name__ == "__main__":

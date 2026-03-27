@@ -100,7 +100,7 @@ class Predictor:
             for prob, idx in zip(top_probs, top_indices)
         ]
 
-        # OCR — flavor and volume detection (gracefully skipped if tesseract unavailable)
+        # OCR — flavor and volume detection via EasyOCR two-pass pipeline
         ocr_text = extract_text_from_image(image)
         flavor = extract_flavor_from_text(ocr_text) if ocr_text else None
         volume_ml = extract_volume_from_text(ocr_text) if ocr_text else None
