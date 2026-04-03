@@ -8,11 +8,13 @@ packaging details from a structured knowledge base.
 
 ## What it does
 
-1. **Classifies** the beverage using EfficientNet-B0 (transfer learning, 9 classes)
+1. **Classifies** the beverage using EfficientNet-B0 (transfer learning, 9 classes) with Test-Time Augmentation (5-pass averaging)
 2. **Reads the label** with OCR (EasyOCR — four-pass pipeline) to detect bottle size and flavor variant
-3. **Returns** the product name, confidence score, detected size/flavor, and top-3 alternatives
-4. **Looks up** brand details, ingredients, packaging, and manufacturer from a curated product database
-5. **Displays** everything in a Streamlit web app
+3. **Overrides** the classifier if OCR reads a different brand name on the label (e.g. back-view images)
+4. **Rejects** out-of-distribution inputs via entropy-based OOD detection — hides product info when the model is not confident
+5. **Returns** the product name, confidence score, detected size/flavor, and top-3 alternatives
+6. **Looks up** brand details, ingredients, packaging, and manufacturer from a curated product database
+7. **Displays** everything in a Streamlit web app with confidence-gated rendering (< 60% → warning, OOD → rejection banner)
 
 ---
 
@@ -46,7 +48,7 @@ User Image (upload)
 
 Training pipeline (offline):
   Bing images → data_cleaner → augmentation → EfficientNet-B0
-  → models/best_checkpoint.pth  (not tracked — see below)
+  → models/best_checkpoint_v2.pth  (not tracked — see below)
 
 Product DB (offline):
   OpenFoodFacts API + manual overrides → data/product_db/{class}.json
@@ -325,6 +327,8 @@ pytest tests/ -v
   "confidence": 0.97,
   "flavor": "Orange",
   "volume_ml": 500,
+  "ocr_override": false,
+  "ood": false,
   "top_k": [
     {"class": "Tropicana", "confidence": 0.97},
     {"class": "Maaza",     "confidence": 0.02},
@@ -333,7 +337,10 @@ pytest tests/ -v
 }
 ```
 
-`flavor` and `volume_ml` are `null` if OCR cannot read them from the label.
+- `flavor` and `volume_ml` are `null` if OCR cannot read them from the label.
+- `confidence` is `null` when `ocr_override=true` — class came from OCR brand text, not softmax.
+- `ood=true` means entropy exceeded threshold — model too uncertain, product card is hidden in UI.
+- `ocr_override=true` means OCR detected a different brand than the classifier top-1 (e.g. back-view image).
 
 ### Product info (`data/product_db/{class_name}.json`)
 
